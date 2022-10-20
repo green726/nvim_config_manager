@@ -1,8 +1,10 @@
 #include <ctype.h>
 #include <errno.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #define PROJECT_NAME "nvim-config-manager"
@@ -11,7 +13,7 @@
 
 #define BUFFER_SIZE 1000
 
-#define CONFIG_PATH "/home/green726/.config/nvim/nvim_config_manager.txt"
+#define CONFIG_PATH_WITHOUT_HOME "/.config/nvim/nvim_config_manager.txt"
 
 int runNeovim(char **commands);
 int addConfig(char **commands);
@@ -23,7 +25,19 @@ int isNumber(char s[]);
 FILE *deleteLine(FILE *src, const int line);
 void removeChars(char *s, char c);
 
+const char *homedir;
+char *fullConfigPath;
+
 int main(int argc, char **argv) {
+    if ((homedir = getenv("HOME")) == NULL) {
+        homedir = getpwuid(getuid())->pw_dir;
+    }
+
+    fullConfigPath = malloc(
+        sizeof(char[strlen(homedir) + strlen(CONFIG_PATH_WITHOUT_HOME)]));
+
+    strcpy(fullConfigPath, homedir);
+    strcat(fullConfigPath, CONFIG_PATH_WITHOUT_HOME);
 
     checkArgCount(2, argc);
 
@@ -46,7 +60,7 @@ int main(int argc, char **argv) {
 }
 
 int listArgs() {
-    FILE *configsTxtPtr = fopen(CONFIG_PATH, "r");
+    FILE *configsTxtPtr = fopen(fullConfigPath, "r");
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -98,7 +112,7 @@ int removeConfig(char **commands) {
         exit(INVALID_ARGS_ERR);
     }
 
-    FILE *configsTxtPtr = fopen(CONFIG_PATH, "r");
+    FILE *configsTxtPtr = fopen(fullConfigPath, "r");
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -130,7 +144,7 @@ int removeConfig(char **commands) {
 }
 
 int addConfig(char **commands) {
-    FILE *configsTxtPtr = fopen(CONFIG_PATH, "a");
+    FILE *configsTxtPtr = fopen(fullConfigPath, "a");
     fputs(commands[2], configsTxtPtr);
     fputs("\n", configsTxtPtr);
     fputs(commands[3], configsTxtPtr);
@@ -140,7 +154,7 @@ int addConfig(char **commands) {
 }
 
 int runNeovim(char **commands) {
-    FILE *configsTxtPtr = fopen(CONFIG_PATH, "r");
+    FILE *configsTxtPtr = fopen(fullConfigPath, "r");
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -185,8 +199,8 @@ FILE *deleteLine(FILE *src, const int line) {
         count++;
     }
     fclose(src);
-    remove(CONFIG_PATH);
-    rename("/home/green726/.config/nvim/delete.tmp", CONFIG_PATH);
+    remove(fullConfigPath);
+    rename("/home/green726/.config/nvim/delete.tmp", fullConfigPath);
     return temp;
 }
 
