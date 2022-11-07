@@ -11,3 +11,6 @@ Run the exe with "help" passed to list the commands.
 # Information
 The program quite simply links a number to your neovim config init.lua (or vimrc) paths allowing you to easily manage multiple configurations. 
 It creates a .txt file in your neovim config directory that contains all of your added configuration.
+
+# WHY?
+I was sick and bored. Result is dumb C code. 
